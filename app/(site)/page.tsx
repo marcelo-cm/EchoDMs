@@ -12,6 +12,7 @@ import {
   TextField,
   IconButton,
   Button,
+  AlertDialog,
 } from "@radix-ui/themes";
 import {
   LockClosedIcon,
@@ -93,20 +94,28 @@ export default function Home() {
       password: password,
     });
 
+    console.log(user);
+
+    if (signUpError) {
+      console.error("Error signing up:", signUpError.message);
+      return;
+    }
+
     const { data: userId, error: error2 } = await supabase
       .from("users")
-      .insert([{ email: email, password: password }])
+      .insert([{ email: email, password: password, id: user.user?.id }])
       .select("id");
 
     if (error2) {
       console.error("Error creating account:", error2.message);
-      if (error2.message.includes("duplicate")) {
+      if (error2.message.includes("already")) {
         setDialogOpen(true);
       }
       return;
     }
 
     console.log("Account created successfully:", user);
+    router.push("/dashboard");
   };
 
   return (
@@ -260,30 +269,25 @@ export default function Home() {
             </Form.Root>
           </Flex>
         </Card>
-        <Dialog.Root open={dialogOpen}>
-          <Dialog.Portal>
-            <Dialog.Overlay className="bg-black/25 data-[state=open]:animate-overlayShow fixed inset-0" />
-            <Dialog.Content className="text-black data-[state=open]:animate-contentShow fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] max-w-[450px] translate-x-[-50%] translate-y-[-50%] rounded-[6px] bg-white p-[25px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:outline-none">
-              <Dialog.Title className="m-0 text-[17px] font-medium">
-                Account Already Exists With This Email
-              </Dialog.Title>
-              <Dialog.Description className="mt-[10px] mb-5 text-[15px] leading-normal">
-                Sign in with your email and password to continue.
-              </Dialog.Description>
-              <Dialog.Close
-                asChild
+        <AlertDialog.Root open={dialogOpen}>
+          <AlertDialog.Content style={{ maxWidth: 450 }}>
+            <Flex direction="column">
+              <AlertDialog.Title>Account Already Exists</AlertDialog.Title>
+              <AlertDialog.Description size="2">
+                An account with this email already exists. Please try logging
+                in, otherwise contact us at marcechaman@gmail.com
+              </AlertDialog.Description>
+              <Button
                 onClick={() => setDialogOpen((prevState) => !prevState)}
+                mt="2"
+                variant="solid"
+                className="w-fit self-end"
               >
-                <button
-                  className=" absolute top-[10px] right-[10px] inline-flex h-[25px] w-[25px] appearance-none items-center justify-center rounded-full focus:shadow-[0_0_0_2px] focus:outline-none"
-                  aria-label="Close"
-                >
-                  <Cross2Icon />
-                </button>
-              </Dialog.Close>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
+                Got it!
+              </Button>
+            </Flex>
+          </AlertDialog.Content>
+        </AlertDialog.Root>
       </Flex>
     </main>
   );
