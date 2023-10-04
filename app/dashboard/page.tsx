@@ -27,18 +27,27 @@ import {
 import { useRouter } from "next/navigation";
 import React, { use, useEffect, useState } from "react";
 import "../globals.css";
+import { Server } from "http";
 
 const Dashboard = () => {
   const router = useRouter();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [userServers, setUserServers] = useState<String[]>([]);
+  const [serverUserMap, setServerUserMap] = useState<{
+    [key: string]: string[];
+  }>({});
+  const [serverInfoDict, setServerInfoDict] = useState<{
+    [key: string]: string[];
+  }>({ key: ["value"] });
+  const [userInfoDict, setUserInfoDict] = useState<{
+    [user: string]: { name: string; echos_sent: number };
+  }>({ placeholder: { name: "", echos_sent: 1 } });
 
   useEffect(() => {
     async function checkUser() {
       const user = await supabase.auth.getUser();
       const session = await supabase.auth.getSession();
       if (user.data.user?.id != null) {
-        console.log("User is logged in");
         localStorage.setItem(
           "token",
           session.data.session?.access_token as string
@@ -50,20 +59,19 @@ const Dashboard = () => {
       }
     }
     checkUser();
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     getUserServers();
   }, []);
 
   const getUserServers = async () => {
-    console.log(localStorage.getItem("user"));
     const { data, error } = await supabase
       .from("server_users")
       .select("server_id")
       .eq("user_id", localStorage.getItem("user"));
 
-    // console.log(data, error);
+    console.log("getUserServers: ", data, error);
 
     if (!error) {
       setUserServers(data.map((element) => element.server_id));
@@ -72,20 +80,108 @@ const Dashboard = () => {
     }
   };
 
-  const getServerUsers = async () => {
-    console.log(localStorage.getItem("user"));
+  const getServerInfo = async () => {
     const { data, error } = await supabase
-      .from("server_users")
-      .select("user_id")
-      .eq("user_id", localStorage.getItem("user"));
+      .from("servers")
+      .select("id, server_name")
+      .in("id", userServers);
 
-    // console.log(data, error);
+    console.log("getServerInfo: ", data, error);
 
     if (!error) {
-      // updateServerUsers(data.map((element) => element.server_id));
+      setServerInfoDict((prevState) => {
+        return data.reduce(
+          (acc, element) => {
+            acc[element.id] = element.server_name;
+            return acc;
+          },
+          { ...prevState }
+        );
+      });
     } else {
       console.log(error);
     }
+  };
+
+  const [allUsers, setAllUsers] = useState<string[]>([]);
+
+  const getUserInfo = async () => {
+    const { data, error } = await supabase
+      .from("users")
+      .select("id, name, echos_sent")
+      .in("id", allUsers);
+
+    console.log("getUserInfo: ", data, error);
+
+    if (!error) {
+      setUserInfoDict((prevState) => {
+        return data.reduce(
+          (acc, element) => {
+            acc[element.id] = {
+              name: element.name,
+              echos_sent: element.echos_sent,
+            };
+            return acc;
+          },
+          { ...prevState }
+        );
+      });
+    } else {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    if (allUsers.length > 0) {
+      getUserInfo();
+    }
+  }, [allUsers]);
+
+  useEffect(() => {
+    if (userServers.length > 0) {
+      getServerUsers();
+      getServerInfo();
+    }
+  }, [userServers]);
+
+  const getServerUsers = async () => {
+    const { data, error } = await supabase
+      .from("server_users")
+      .select("user_id, server_id")
+      .in("server_id", userServers);
+
+    console.log("getServerUsers: ", data, error);
+
+    if (!error) {
+      mapServerUsers(data);
+      setAllUsers(Array.from(new Set(data.map((item) => item.user_id))));
+    } else {
+      console.log(error);
+    }
+  };
+
+  const mapServerUsers = (
+    data: {
+      user_id: string;
+      server_id: string;
+    }[]
+  ) => {
+    const mapping: { [key: string]: string[] } = data.reduce(
+      (
+        acc: { [key: string]: string[] },
+        record: { server_id: string; user_id: string }
+      ) => {
+        if (!acc[record.server_id]) {
+          acc[record.server_id] = [];
+        }
+        acc[record.server_id].push(record.user_id);
+
+        return acc;
+      },
+      {}
+    );
+
+    setServerUserMap(mapping);
   };
 
   const handleSignOut = async () => {
@@ -148,144 +244,168 @@ const Dashboard = () => {
             <PlusIcon />
           </Button>
         </Flex>
-        <div>{String(userServers)}</div>
-        <Flex direction="column" gap="4">
-          <Box mt="2">
-            <Heading size="4">
-              <Flex gap="2" align="center">
-                <Avatar fallback="1" />
-                Server #1
-              </Flex>
-            </Heading>
-            <Table.Root>
-              <Table.Header>
-                <Table.Row>
-                  <Table.ColumnHeaderCell>User</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>Echo DMs Sent</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell />
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                <Table.Row>
-                  <Table.RowHeaderCell>
-                    <Flex gap="2" align="center">
-                      <Avatar
-                        size="2"
-                        radius="full"
-                        fallback="M"
-                        color="indigo"
-                      />
-                      Marcelo Chaman Mallqui
-                    </Flex>
-                  </Table.RowHeaderCell>
-                  <Table.Cell>
-                    <Flex gap="2" height="100%" align="center">
-                      123
-                    </Flex>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Flex gap="2" height="100%" align="center">
-                      <Dialog.Root>
-                        <Dialog.Trigger>
-                          <Button size="2">Edit User</Button>
-                        </Dialog.Trigger>
-                        <Dialog.Content style={{ maxWidth: 450 }}>
-                          <Dialog.Title>Edit profile</Dialog.Title>
-                          <Dialog.Description size="2" mb="4">
-                            Make changes to your profile.
-                          </Dialog.Description>
+        {/* <div>{String(userServers)}</div>
+        <pre>{JSON.stringify(serverUserMap, null, 2)}</pre> */}
+        <Box mt="2">
+          <Flex direction="column" gap="4">
+            {Object.keys(serverUserMap)?.map((server, key) => (
+              <Heading size="4" key={key}>
+                <Flex gap="2" align="center">
+                  <Avatar fallback={serverInfoDict[server][0]} />
+                  {serverInfoDict[server]}
+                </Flex>
+                <Table.Root mb="4">
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.ColumnHeaderCell>User</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>
+                        Echo DMs Sent
+                      </Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell />
+                    </Table.Row>
+                  </Table.Header>
+                  {serverUserMap[server]?.map((user, key) => (
+                    <Table.Body key={key}>
+                      <Table.Row>
+                        <Table.RowHeaderCell>
+                          <Flex gap="2" align="center">
+                            <Avatar
+                              size="2"
+                              radius="full"
+                              fallback={userInfoDict[user]?.name[0]}
+                              color="indigo"
+                            />
+                            {userInfoDict[user]?.name}
+                          </Flex>
+                        </Table.RowHeaderCell>
+                        <Table.Cell>
+                          <Flex gap="2" height="100%" align="center">
+                            {userInfoDict[user]?.echos_sent}
+                          </Flex>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Flex gap="2" height="100%" align="center">
+                            <Dialog.Root>
+                              <Dialog.Trigger>
+                                <Button size="2">Edit User</Button>
+                              </Dialog.Trigger>
+                              <Dialog.Content style={{ maxWidth: 450 }}>
+                                <Dialog.Title>Edit profile</Dialog.Title>
+                                <Dialog.Description size="2" mb="4">
+                                  Make changes to your profile.
+                                </Dialog.Description>
 
-                          <Flex direction="column" gap="3">
-                            <label>
-                              <Text as="div" size="2" mb="1" weight="bold">
-                                Name
-                              </Text>
-                              <TextField.Input
-                                defaultValue="Freja Johnsen"
-                                placeholder="Enter your full name"
-                              />
-                            </label>
-                            <label>
-                              <Text as="div" size="2" mb="1" weight="bold">
-                                User OAuth Token
-                              </Text>
-                              <TextField.Input
-                                defaultValue="12345"
-                                placeholder="Enter your email"
-                              />
-                            </label>
-                            <label>
-                              <Text as="div" size="2" mb="1" weight="bold">
-                                Proxy Password <em>(Optional)</em>
-                              </Text>
-                              <TextField.Input
-                                defaultValue="12345"
-                                placeholder="Enter your email"
-                              />
-                            </label>
-                            <Box>
-                              <Callout.Root>
-                                <Callout.Icon>
-                                  <InfoCircledIcon />
-                                </Callout.Icon>
-                                <Callout.Text>
-                                  Proxy passwords allow others to send DMs on
-                                  your behalf.
-                                </Callout.Text>
-                              </Callout.Root>
-                            </Box>
-                          </Flex>
-                          <Flex gap="3" mt="4" justify="end">
-                            <Dialog.Close>
-                              <Button variant="soft" color="gray">
-                                Cancel
-                              </Button>
-                            </Dialog.Close>
-                            <Dialog.Close>
-                              <Button>Save</Button>
-                            </Dialog.Close>
-                          </Flex>
-                        </Dialog.Content>
-                      </Dialog.Root>
-                      <AlertDialog.Root>
-                        <AlertDialog.Trigger>
-                          <Button size="2" color="red">
-                            Delete
-                          </Button>
-                        </AlertDialog.Trigger>
-                        <AlertDialog.Content style={{ maxWidth: 450 }}>
-                          <Flex direction="column">
-                            <AlertDialog.Title>Are you sure?</AlertDialog.Title>
-                            <AlertDialog.Description size="2">
-                              If you delete this user, they will have to sign in
-                              again to use this app.
-                            </AlertDialog.Description>
-                            <Flex gap="3" mt="4" justify="end">
-                              <AlertDialog.Cancel>
-                                <Button variant="soft" color="gray">
-                                  Cancel
+                                <Flex direction="column" gap="3">
+                                  <label>
+                                    <Text
+                                      as="div"
+                                      size="2"
+                                      mb="1"
+                                      weight="bold"
+                                    >
+                                      Name
+                                    </Text>
+                                    <TextField.Input
+                                      defaultValue="Freja Johnsen"
+                                      placeholder="Enter your full name"
+                                    />
+                                  </label>
+                                  <label>
+                                    <Text
+                                      as="div"
+                                      size="2"
+                                      mb="1"
+                                      weight="bold"
+                                    >
+                                      User OAuth Token
+                                    </Text>
+                                    <TextField.Input
+                                      defaultValue="12345"
+                                      placeholder="Enter your email"
+                                    />
+                                  </label>
+                                  <label>
+                                    <Text
+                                      as="div"
+                                      size="2"
+                                      mb="1"
+                                      weight="bold"
+                                    >
+                                      Proxy Password <em>(Optional)</em>
+                                    </Text>
+                                    <TextField.Input
+                                      defaultValue="12345"
+                                      placeholder="Enter your email"
+                                    />
+                                  </label>
+                                  <Box>
+                                    <Callout.Root>
+                                      <Callout.Icon>
+                                        <InfoCircledIcon />
+                                      </Callout.Icon>
+                                      <Callout.Text>
+                                        Proxy passwords allow others to send DMs
+                                        on your behalf.
+                                      </Callout.Text>
+                                    </Callout.Root>
+                                  </Box>
+                                </Flex>
+                                <Flex gap="3" mt="4" justify="end">
+                                  <Dialog.Close>
+                                    <Button variant="soft" color="gray">
+                                      Cancel
+                                    </Button>
+                                  </Dialog.Close>
+                                  <Dialog.Close>
+                                    <Button>Save</Button>
+                                  </Dialog.Close>
+                                </Flex>
+                              </Dialog.Content>
+                            </Dialog.Root>
+                            <AlertDialog.Root>
+                              <AlertDialog.Trigger>
+                                <Button size="2" color="red">
+                                  Delete
                                 </Button>
-                              </AlertDialog.Cancel>
-                              <AlertDialog.Action>
-                                <Button
-                                  variant="solid"
-                                  color="red"
-                                  onClick={() => deleteUser("id")}
-                                >
-                                  Delete User
-                                </Button>
-                              </AlertDialog.Action>
-                            </Flex>
+                              </AlertDialog.Trigger>
+                              <AlertDialog.Content style={{ maxWidth: 450 }}>
+                                <Flex direction="column">
+                                  <AlertDialog.Title>
+                                    Are you sure?
+                                  </AlertDialog.Title>
+                                  <AlertDialog.Description size="2">
+                                    If you delete this user, they will have to
+                                    sign in again to use this app.
+                                  </AlertDialog.Description>
+                                  <Flex gap="3" mt="4" justify="end">
+                                    <AlertDialog.Cancel>
+                                      <Button variant="soft" color="gray">
+                                        Cancel
+                                      </Button>
+                                    </AlertDialog.Cancel>
+                                    <AlertDialog.Action>
+                                      <Button
+                                        variant="solid"
+                                        color="red"
+                                        onClick={() => deleteUser("id")}
+                                      >
+                                        Delete User
+                                      </Button>
+                                    </AlertDialog.Action>
+                                  </Flex>
+                                </Flex>
+                              </AlertDialog.Content>
+                            </AlertDialog.Root>
                           </Flex>
-                        </AlertDialog.Content>
-                      </AlertDialog.Root>
-                    </Flex>
-                  </Table.Cell>
-                </Table.Row>
-              </Table.Body>
-            </Table.Root>
-          </Box>
-        </Flex>
+                        </Table.Cell>
+                      </Table.Row>
+                    </Table.Body>
+                  ))}
+                </Table.Root>
+              </Heading>
+            ))}
+          </Flex>
+        </Box>
       </Card>
       <Card>
         - add servers <br />- server ID - what info can i pull using slack api
