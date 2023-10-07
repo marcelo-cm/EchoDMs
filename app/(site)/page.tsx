@@ -29,9 +29,14 @@ import { useRouter } from "next/navigation";
 
 export default function Home() {
   const [hasAccount, setHasAccount] = useState(true);
-  const [formDetails, setFormDetails] = useState({ email: "", password: "" });
+  const [formDetails, setFormDetails] = useState({
+    email: "",
+    password: "",
+    name: "",
+  });
   const router = useRouter();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [logInDialogOpen, setLogInDialogOpen] = useState(false);
 
   useEffect(() => {
     async function checkUser() {
@@ -74,6 +79,10 @@ export default function Home() {
 
     if (error) {
       console.error("Error signing into account:", error.message);
+
+      if (error.message.includes("Invalid")) {
+        setLogInDialogOpen(true);
+      }
       return;
     }
 
@@ -82,10 +91,10 @@ export default function Home() {
   };
 
   const createNewAccount = async () => {
-    const { email, password } = formDetails;
+    const { email, password, name } = formDetails;
 
-    if (!email || !password) {
-      console.error("Email or password missing!");
+    if (!email || !password || !name) {
+      console.error("Email, password or name missing!");
       return;
     }
 
@@ -103,13 +112,15 @@ export default function Home() {
 
     const { data: userId, error: error2 } = await supabase
       .from("users")
-      .insert([{ email: email, password: password, id: user.user?.id }])
+      .insert([
+        { email: email, password: password, id: user.user?.id, name: name },
+      ])
       .select("id");
 
     if (error2) {
       console.error("Error creating account:", error2.message);
       if (error2.message.includes("already")) {
-        setDialogOpen(true);
+        setCreateDialogOpen(true);
       }
       return;
     }
@@ -269,7 +280,29 @@ export default function Home() {
             </Form.Root>
           </Flex>
         </Card>
-        <AlertDialog.Root open={dialogOpen}>
+        <AlertDialog.Root open={logInDialogOpen}>
+          <AlertDialog.Content style={{ maxWidth: 450 }}>
+            <Flex direction="column">
+              <AlertDialog.Title>
+                Account Does Not Exist, or Incorrect Password
+              </AlertDialog.Title>
+              <AlertDialog.Description size="2">
+                An account with this email does not exist. Please try logging in
+                with another password or create an account. If this issue
+                persists, contact us at marcechaman@gmail.com
+              </AlertDialog.Description>
+              <Button
+                onClick={() => setLogInDialogOpen((prevState) => !prevState)}
+                mt="2"
+                variant="solid"
+                className="w-fit self-end"
+              >
+                Got it!
+              </Button>
+            </Flex>
+          </AlertDialog.Content>
+        </AlertDialog.Root>
+        <AlertDialog.Root open={createDialogOpen}>
           <AlertDialog.Content style={{ maxWidth: 450 }}>
             <Flex direction="column">
               <AlertDialog.Title>Account Already Exists</AlertDialog.Title>
@@ -278,7 +311,7 @@ export default function Home() {
                 in, otherwise contact us at marcechaman@gmail.com
               </AlertDialog.Description>
               <Button
-                onClick={() => setDialogOpen((prevState) => !prevState)}
+                onClick={() => setCreateDialogOpen((prevState) => !prevState)}
                 mt="2"
                 variant="solid"
                 className="w-fit self-end"
