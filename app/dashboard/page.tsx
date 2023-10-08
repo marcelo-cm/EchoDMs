@@ -218,6 +218,10 @@ const Dashboard = () => {
     }
   };
 
+  const handleTestAPICall = async () => {
+    const res = await fetch("/api/echosignin");
+  };
+
   const deleteUser = async (server: string, id: string) => {
     const { error } = await supabase
       .from("server_users")
@@ -634,6 +638,7 @@ const Dashboard = () => {
       </Card>
 
       <Button onClick={handleSignOut}>Sign Out</Button>
+      <Button onClick={handleTestAPICall}>Test API Call</Button>
     </main>
   );
 };
