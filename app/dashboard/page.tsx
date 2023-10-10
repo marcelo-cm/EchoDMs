@@ -65,22 +65,18 @@ const Dashboard = () => {
   const [editUserForm, setEditUserForm] = useState<any>();
 
   useEffect(() => {
-    async function checkUser() {
-      const user = await supabase.auth.getUser();
-      const session = await supabase.auth.getSession();
-      if (user.data.user?.id != null) {
-        localStorage.setItem(
-          "token",
-          session.data.session?.access_token as string
-        );
-        localStorage.setItem("user", user.data.user?.id as string);
-        console.log("User is logged in");
-      } else {
-        router.push("/");
-      }
-    }
     checkUser();
   }, []);
+
+  async function checkUser() {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (!error && data.session) {
+      console.log(data.session.user.id);
+    } else {
+      router.push("/");
+    }
+  }
 
   useEffect(() => {
     getUserServers();
@@ -177,7 +173,7 @@ const Dashboard = () => {
       .select("user_slack_id, server_id")
       .in("server_id", userServers);
 
-    console.log("getServerUsers: ", data, error);
+    // console.log("getServerUsers: ", data, error);
 
     if (!error) {
       mapServerUsers(data);
@@ -353,14 +349,6 @@ const Dashboard = () => {
     });
   };
 
-  useEffect(() => {
-    console.log(editUserForm);
-  }, [editUserForm]);
-
-  useEffect(() => {
-    console.log(addUserForm);
-  }, [addUserForm]);
-
   return (
     <main className="flex min-h-screen bg-slate-200 flex-col items-center justify-between p-24">
       {/* Founder Contact Card */}
@@ -387,7 +375,7 @@ const Dashboard = () => {
           </a>
         </Flex>
       </Card>
-      <Card variant="classic" size="3" className="w-1/2">
+      <Card variant="classic" size="3" className="min-w-[500px] w-1/2">
         <Heading mb="4" size="6">
           Servers & Users
         </Heading>

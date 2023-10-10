@@ -39,25 +39,21 @@ export default function Home() {
   const [logInDialogOpen, setLogInDialogOpen] = useState(false);
 
   useEffect(() => {
-    async function checkUser() {
-      const user = await supabase.auth.getUser();
-      const session = await supabase.auth.getSession();
-      if (user.data.user?.id != null) {
-        console.log("User is logged in");
-        localStorage.setItem(
-          "token",
-          session.data.session?.access_token as string
-        );
-        localStorage.setItem("user", user.data.user?.id as string);
-        console.log("User is logged in");
-        router.push("/dashboard");
-      }
-    }
     checkUser();
-  }, [router]);
+  }, []);
+
+  async function checkUser() {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (!error && data.session) {
+      router.push("/dashboard");
+    } else {
+      console.log("No active session");
+    }
+  }
 
   const updateForm = (e: any) => {
-    console.log(e.target.name, e.target.value);
+    // console.log(e.target.name, e.target.value);
     setFormDetails((prevState) => ({
       ...prevState,
       [e.target.name]: e.target.value,
