@@ -218,11 +218,20 @@ export default function Home() {
                         createNewAccount();
                       }}
                     >
-                      {hasAccount
-                        ? "Create an account"
-                        : "Have an account? Log In!"}
+                      Create an account
                     </Button>
                   </Form.Submit>
+                  <Flex justify="center">
+                    <a href="https://slack.com/oauth/v2/authorize?client_id=2296686343921.5959455796519&scope=chat:write,commands&user_scope=channels:read,chat:write,groups:read,groups:write,links.embed:write,links:read,links:write,users.profile:read,users:read">
+                      <img
+                        alt="Add to Slack"
+                        height="40"
+                        width="139"
+                        src="https://platform.slack-edge.com/img/add_to_slack.png"
+                        srcSet="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x"
+                      />
+                    </a>
+                  </Flex>
                 </Flex>
               </Flex>
             </Form.Root>
