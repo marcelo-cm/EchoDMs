@@ -214,10 +214,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleTestAPICall = async () => {
-    const res = await fetch("/api/echosignin");
-  };
-
   const deleteUser = async (server: string, id: string) => {
     const { error } = await supabase
       .from("server_users")
@@ -348,6 +344,10 @@ const Dashboard = () => {
       return { ...prevState, [e.target.name]: e.target.value };
     });
   };
+
+  useEffect(() => {
+    console.log("editUserForm: ", editUserForm);
+  }, [editUserForm]);
 
   return (
     <main className="flex min-h-screen bg-slate-200 flex-col items-center justify-between p-24">
@@ -624,9 +624,7 @@ const Dashboard = () => {
           </Flex>
         </Box>
       </Card>
-
       <Button onClick={handleSignOut}>Sign Out</Button>
-      <Button onClick={handleTestAPICall}>Test API Call</Button>
     </main>
   );
 };
