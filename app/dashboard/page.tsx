@@ -66,14 +66,14 @@ const Dashboard = () => {
 
   useEffect(() => {
     checkUser();
-    getUserServers();
   }, []);
 
   async function checkUser() {
     const { data, error } = await supabase.auth.getSession();
 
     if (!error && data.session) {
-      console.log(data.session.user.id);
+      console.log("checkUser: ", data.session.user.id);
+      getUserServers(data.session.user.id);
     } else {
       router.push("/");
     }
@@ -92,18 +92,14 @@ const Dashboard = () => {
     }
   }, [userServers]);
 
-  const getUserServers = async () => {
+  const getUserServers = async (user_id: string) => {
     // This function gets all the servers that the user is a member of by querying the server_users table with the user's id
     // It then sets the userServers state to an array of the server ids
-    const { data: userData, error: errorUserData } =
-      await supabase.auth.getSession();
-
-    console.log("getUserServers: ", userData.session?.user.id);
 
     const { data, error } = await supabase
       .from("server_users")
       .select("server_id")
-      .eq("user_id", userData.session?.user.id);
+      .eq("user_id", user_id);
 
     // console.log("getUserServers: ", data, error);
 
