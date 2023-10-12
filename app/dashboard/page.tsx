@@ -98,11 +98,13 @@ const Dashboard = () => {
   const getUserServers = async () => {
     // This function gets all the servers that the user is a member of by querying the server_users table with the user's id
     // It then sets the userServers state to an array of the server ids
+    const { data: userData, error: errorUserData } =
+      await supabase.auth.getSession();
 
     const { data, error } = await supabase
       .from("server_users")
       .select("server_id")
-      .eq("user_id", localStorage.getItem("user"));
+      .eq("user_id", userData.session?.user.id);
 
     // console.log("getUserServers: ", data, error);
 
