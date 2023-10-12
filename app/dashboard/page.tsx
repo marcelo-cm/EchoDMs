@@ -66,6 +66,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     checkUser();
+    getUserServers();
   }, []);
 
   async function checkUser() {
@@ -77,10 +78,6 @@ const Dashboard = () => {
       router.push("/");
     }
   }
-
-  useEffect(() => {
-    getUserServers();
-  }, []);
 
   useEffect(() => {
     if (allUsers.length > 0) {
@@ -100,6 +97,8 @@ const Dashboard = () => {
     // It then sets the userServers state to an array of the server ids
     const { data: userData, error: errorUserData } =
       await supabase.auth.getSession();
+
+    console.log("getUserServers: ", userData.session?.user.id);
 
     const { data, error } = await supabase
       .from("server_users")
