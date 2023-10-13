@@ -32,7 +32,6 @@ export default function Home() {
   const [formDetails, setFormDetails] = useState({
     email: "",
     password: "",
-    name: "",
   });
   const router = useRouter();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -87,9 +86,9 @@ export default function Home() {
   };
 
   const createNewAccount = async () => {
-    const { email, password, name } = formDetails;
+    const { email, password } = formDetails;
 
-    if (!email || !password || !name) {
+    if (!email || !password) {
       console.error("Email, password or name missing!");
       return;
     }
@@ -108,7 +107,7 @@ export default function Home() {
 
     const { data: userId, error: error2 } = await supabase
       .from("users")
-      .insert([{ email: email, password: password }])
+      .insert([{ id: user.user?.id, email: email, password: password }])
       .select("id");
 
     if (error2) {
@@ -172,7 +171,6 @@ export default function Home() {
                         size="3"
                       />
                     </Form.Control>
-                    {/* <Form.Message /> */}
                   </Flex>
                 </Form.Field>
                 <Form.Field name="password">
@@ -191,7 +189,6 @@ export default function Home() {
                         size="3"
                       />
                     </Form.Control>
-                    {/* <Form.Message /> */}
                   </Flex>
                 </Form.Field>
                 <Flex gap="4" direction="column" className="self-center">
@@ -212,6 +209,7 @@ export default function Home() {
                       variant="soft"
                       size="3"
                       onClick={(e) => {
+                        console.log("clicked create");
                         e.preventDefault();
                         createNewAccount();
                       }}
