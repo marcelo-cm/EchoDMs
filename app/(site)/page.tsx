@@ -108,9 +108,7 @@ export default function Home() {
 
     const { data: userId, error: error2 } = await supabase
       .from("users")
-      .insert([
-        { email: email, password: password, id: user.user?.id, name: name },
-      ])
+      .insert([{ email: email, password: password }])
       .select("id");
 
     if (error2) {
