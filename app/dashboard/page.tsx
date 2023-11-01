@@ -64,6 +64,7 @@ const Dashboard = () => {
     user_oauth: "",
   });
   const [editUserForm, setEditUserForm] = useState<any>();
+  const [editServerForm, setEditServerForm] = useState<any>();
 
   useEffect(() => {
     checkUser();
@@ -73,7 +74,7 @@ const Dashboard = () => {
     const { data, error } = await supabase.auth.getSession();
 
     if (!error && data.session) {
-      console.log("checkUser: ", data.session.user.id);
+      // console.log("checkUser: ", data.session.user.id);
       getUserServers(data.session.user.id);
     } else {
       router.push("/");
@@ -228,7 +229,7 @@ const Dashboard = () => {
   };
 
   const addUser = async (server: string) => {
-    console.log(server);
+    // console.log(server);
     const { email, password, name, user_oauth } = addUserForm;
 
     if (!email || !password || !name) {
@@ -329,6 +330,36 @@ const Dashboard = () => {
     if (error) {
       console.log(error.message);
     }
+
+    getUserInfo();
+  };
+
+  const editServer = async (server_id: string) => {
+    const { server_name } = editServerForm || {};
+
+    // Create an object to store only the properties that are not undefined.
+    const updateData: { [key: string]: any } = {};
+    if (server_name !== undefined) updateData.server_name = server_name;
+
+    // Check if the updateData object is empty. If it's empty, there's nothing to update.
+    if (Object.keys(updateData).length === 0) {
+      console.log("No data to update.");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("servers")
+      .update(updateData)
+      .eq("id", server_id);
+
+    if (!error) {
+      setIsDeleteOpen(false);
+    }
+    if (error) {
+      console.log(error.message);
+    }
+
+    getServerInfo();
   };
 
   const updateAddUserForm = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -343,9 +374,19 @@ const Dashboard = () => {
     });
   };
 
-  useEffect(() => {
-    console.log("editUserForm: ", editUserForm);
-  }, [editUserForm]);
+  const updateEditServerForm = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditServerForm((prevState: any) => {
+      return { ...prevState, [e.target.name]: e.target.value };
+    });
+  };
+
+  // useEffect(() => {
+  //   console.log("editUserForm: ", editUserForm);
+  // }, [editUserForm]);
+
+  // useEffect(() => {
+  //   console.log("editServerForm: ", editServerForm);
+  // }, [editServerForm]);
 
   const handleCopyClick = async () => {
     const textToCopy = JSON.stringify(
@@ -477,74 +518,105 @@ const Dashboard = () => {
                         />
                         {serverInfoDict[server]}
                       </Flex>
-                      <Dialog.Root>
-                        <Dialog.Trigger>
-                          <Button size="2" className="hidden lg:flex">
-                            Add User
-                            <PlusIcon />
-                          </Button>
-                        </Dialog.Trigger>
-                        <Dialog.Content style={{ maxWidth: 450 }}>
-                          <Dialog.Title>Edit profile</Dialog.Title>
-                          <DialogDescription mb="2">
-                            Add a user to {serverInfoDict[server]}
-                          </DialogDescription>
-                          <Flex direction="column" gap="3">
-                            <label>
-                              <Text as="div" size="2" mb="1" weight="bold">
-                                Name
-                              </Text>
-                              <TextField.Input
-                                name="name"
-                                onChange={(e) => updateAddUserForm(e)}
-                                placeholder="Enter your full name"
-                              />
-                            </label>
-                            <label>
-                              <Text as="div" size="2" mb="1" weight="bold">
-                                Email
-                              </Text>
-                              <TextField.Input
-                                name="email"
-                                onChange={(e) => updateAddUserForm(e)}
-                                placeholder="Enter your email"
-                              />
-                            </label>
-                            <label>
-                              <Text as="div" size="2" mb="1" weight="bold">
-                                Password
-                              </Text>
-                              <TextField.Input
-                                name="password"
-                                onChange={(e) => updateAddUserForm(e)}
-                                placeholder="Enter your email"
-                              />
-                            </label>
-                            <label>
-                              <Text as="div" size="2" mb="1" weight="bold">
-                                User OAuth Token
-                              </Text>
-                              <TextField.Input
-                                name="user_oauth"
-                                onChange={(e) => updateAddUserForm(e)}
-                                placeholder="User OAuth Token"
-                              />
-                            </label>
-                          </Flex>
-                          <Flex gap="3" mt="4" justify="end">
-                            <Dialog.Close>
-                              <Button variant="soft" color="gray">
-                                Cancel
-                              </Button>
-                            </Dialog.Close>
-                            <Dialog.Close>
-                              <Button onClick={() => addUser(server)}>
-                                Add User
-                              </Button>
-                            </Dialog.Close>
-                          </Flex>
-                        </Dialog.Content>
-                      </Dialog.Root>
+                      <Flex direction="row" gap="2">
+                        <Dialog.Root>
+                          <Dialog.Trigger>
+                            <Button
+                              size="2"
+                              variant="soft"
+                              className="hidden lg:flex"
+                            >
+                              Edit Server
+                            </Button>
+                          </Dialog.Trigger>
+                          <Dialog.Content style={{ maxWidth: 500 }}>
+                            <Dialog.Title>
+                              Edit {serverInfoDict[server]}
+                            </Dialog.Title>
+                            <Flex direction="column" gap="3">
+                              <label>
+                                <Text as="div" size="2" mb="1" weight="bold">
+                                  Name
+                                </Text>
+                                <TextField.Input
+                                  name="server_name"
+                                  onChange={(e) => updateEditServerForm(e)}
+                                  defaultValue={serverInfoDict[server]}
+                                  placeholder="Enter your server name"
+                                />
+                              </label>
+                            </Flex>
+                            <Flex gap="3" mt="4" justify="end">
+                              <Dialog.Close>
+                                <Button variant="soft" color="gray">
+                                  Cancel
+                                </Button>
+                              </Dialog.Close>
+                              <Dialog.Close onClick={() => editServer(server)}>
+                                <Button>Save</Button>
+                              </Dialog.Close>
+                            </Flex>
+                          </Dialog.Content>
+                        </Dialog.Root>
+                        <Dialog.Root>
+                          <Dialog.Trigger>
+                            <Button size="2" className="hidden lg:flex">
+                              Add User
+                              <PlusIcon />
+                            </Button>
+                          </Dialog.Trigger>
+                          <Dialog.Content style={{ maxWidth: 450 }}>
+                            <Dialog.Title>Edit profile</Dialog.Title>
+                            <DialogDescription mb="2">
+                              Add a user to {serverInfoDict[server]}
+                            </DialogDescription>
+                            <Flex direction="column" gap="3">
+                              <label>
+                                <Text as="div" size="2" mb="1" weight="bold">
+                                  Name
+                                </Text>
+                                <TextField.Input
+                                  name="name"
+                                  onChange={(e) => updateAddUserForm(e)}
+                                  placeholder="Enter your full name"
+                                />
+                              </label>
+                              <label>
+                                <Text as="div" size="2" mb="1" weight="bold">
+                                  Email
+                                </Text>
+                                <TextField.Input
+                                  name="email"
+                                  onChange={(e) => updateAddUserForm(e)}
+                                  placeholder="Enter your email"
+                                />
+                              </label>
+                              <label>
+                                <Text as="div" size="2" mb="1" weight="bold">
+                                  User OAuth Token
+                                </Text>
+                                <TextField.Input
+                                  name="user_oauth"
+                                  onChange={(e) => updateAddUserForm(e)}
+                                  placeholder="User OAuth Token"
+                                />
+                              </label>
+                            </Flex>
+                            <Flex gap="3" mt="4" justify="end">
+                              <Dialog.Close>
+                                <Button variant="soft" color="gray">
+                                  Cancel
+                                </Button>
+                              </Dialog.Close>
+                              <Dialog.Close>
+                                <Button onClick={() => addUser(server)}>
+                                  Add User
+                                </Button>
+                              </Dialog.Close>
+                            </Flex>
+                          </Dialog.Content>
+                        </Dialog.Root>
+                      </Flex>
                     </Flex>
                     <Table.Root mb="4">
                       <Table.Header>
@@ -731,10 +803,8 @@ const Dashboard = () => {
         <Flex direction="column" gap="4" className="w-full lg:w-[500px]">
           <Card variant="classic" size="3" className="w-full">
             <Flex direction="column" gap="4">
-              <Heading size="6">How to Use EchoDMs</Heading>
+              <Heading size="6"> EchoDMs Helper Guider 🏄‍♂️ </Heading>
               <Text>
-                EchoDMs Helper Guider 🏄‍♂️ <br />
-                <br />
                 1️⃣ To send a personal DM to each person in a channel, excluding
                 a few <br />
                 <b>
