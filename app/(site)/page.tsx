@@ -124,8 +124,8 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen bg-slate-200 flex-col items-center justify-between p-24">
-      <Flex gap="3" direction="column">
-        <Card variant="classic" size="2" style={{ width: 425 }}>
+      <Flex gap="3" direction="column" className="items-center">
+        <Card variant="classic" size="2" className="w-full lg:w-[425px]">
           <Flex justify="between" align="center">
             <Flex gap="4" align="center">
               <Avatar size="4" radius="full" fallback="M" color="indigo" />
@@ -147,6 +147,14 @@ export default function Home() {
               </Button>
             </a>
           </Flex>
+        </Card>
+        <Card variant="classic" size="2" className="w-full lg:w-[625px] h-fit">
+          <div className="flex flex-col items-center">
+            <video width="auto" height="300" loop autoPlay controls>
+              <source src="/ECHODM-2.mov" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
         </Card>
         <Card variant="classic" size="4" style={{ width: 425 }}>
           <Flex direction="column" gap="4">
@@ -217,17 +225,6 @@ export default function Home() {
                       Create an account
                     </Button>
                   </Form.Submit>
-                  <Flex justify="center">
-                    <a href="https://slack.com/oauth/v2/authorize?client_id=2296686343921.5959455796519&scope=chat:write,commands&user_scope=channels:read,chat:write,groups:read,groups:write,links.embed:write,links:read,links:write,users.profile:read,users:read">
-                      <img
-                        alt="Add to Slack"
-                        height="40"
-                        width="139"
-                        src="https://platform.slack-edge.com/img/add_to_slack.png"
-                        srcSet="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x"
-                      />
-                    </a>
-                  </Flex>
                 </Flex>
               </Flex>
             </Form.Root>
